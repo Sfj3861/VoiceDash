@@ -26,6 +26,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 setup_geode_mod(VoiceDash)
 
 if (ANDROID)
-    # The AAudio NDK API is available on Android 8.0 (API 26) and later.
-    target_link_libraries(VoiceDash PRIVATE aaudio log)
+    # Audio is captured through android.media.AudioRecord via JNI.
+    target_link_libraries(VoiceDash PRIVATE log)
 endif()
