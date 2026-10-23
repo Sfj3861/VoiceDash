@@ -15,7 +15,7 @@ struct RoutedButton final {
  */
 class InputMixer final {
 public:
-    static RoutedButton route(bool down, int button, bool isPlayer2, bool inPlayLayer) noexcept;
+    static RoutedButton route(bool down, int button, bool isPlayer1, bool inPlayLayer) noexcept;
     static void injectVoice(PlayLayer* layer, bool down) noexcept;
     static void reset(PlayLayer* layer) noexcept;
     static bool isInjectingVoice() noexcept;
