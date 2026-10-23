@@ -5,9 +5,21 @@ on:
   push:
     branches:
       - "**"
+  pull_request:
 
 jobs:
+  detector-tests:
+    name: Voice detector unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile detector tests
+        run: g++ -std=c++20 -Wall -Wextra -Werror -pedantic tests/voice_detector_tests.cpp src/voice/VoiceDetector.cpp -o /tmp/voicedash-detector-tests
+      - name: Run detector tests
+        run: /tmp/voicedash-detector-tests
+
   build:
+    needs: [detector-tests]
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +35,9 @@ jobs:
       - name: Build Geode mod
         uses: geode-sdk/build-geode-mod@main
         with:
+          sdk: given
           target: ${{ matrix.config.target }}
+          android-min-sdk: 26
           combine: true
 
   package:
