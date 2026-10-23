@@ -6,7 +6,51 @@
 #include "input/InputMixer.hpp"
 #include "runtime/VoiceRuntime.hpp"
 
+#include <algorithm>
+#include <string>
+
 using namespace geode::prelude;
+
+namespace {
+
+void showVoiceCalibrator() {
+    const double activation = Mod::get()->getSettingValue<double>("activation-threshold");
+    const double release = Mod::get()->getSettingValue<double>("release-threshold");
+
+    createQuickPopup(
+        "VoiceDash Calibrator",
+        fmt::format(
+            "Adjust the microphone sensitivity. Make a sustained vowel/hum while playing, "
+            "then pause to tune it.\n\nCurrent activation threshold: {:.3f}\n"
+            "Current release threshold: {:.3f}\n\n"
+            "More sensitive helps quiet voices but may react to background noise.",
+            activation, release
+        ),
+        "Less sensitive",
+        "More sensitive",
+        [](auto, bool moreSensitive) {
+            double on = Mod::get()->getSettingValue<double>("activation-threshold");
+            double off = Mod::get()->getSettingValue<double>("release-threshold");
+
+            if (moreSensitive) {
+                on = std::max(0.005, on * 0.80);
+                off = std::max(0.002, off * 0.80);
+            } else {
+                on = std::min(0.20, on * 1.20);
+                off = std::min(0.15, off * 1.20);
+            }
+
+            // Keep the release threshold below activation so the detector has
+            // hysteresis and does not chatter around one threshold.
+            off = std::min(off, on * 0.80);
+            Mod::get()->setSettingValue<double>("activation-threshold", on);
+            Mod::get()->setSettingValue<double>("release-threshold", off);
+            showVoiceCalibrator();
+        }
+    );
+}
+
+} // namespace
 
 class $modify(VoiceDashBaseGameLayer, GJBaseGameLayer) {
     void handleButton(bool down, int button, bool isPlayer1) {
@@ -49,6 +93,25 @@ class $modify(VoiceDashPlayLayer, PlayLayer) {
 };
 
 class $modify(VoiceDashPauseLayer, PauseLayer) {
+    void customSetup() {
+        PauseLayer::customSetup();
+
+        auto* label = ButtonSprite::create("Voice Calibrator");
+        auto* item = CCMenuItemSpriteExtra::create(
+            label, this, menu_selector(VoiceDashPauseLayer::onVoiceCalibrator)
+        );
+        auto* menu = CCMenu::create();
+        menu->addChild(item);
+        menu->setPosition({ CCDirector::sharedDirector()->getWinSize().width / 2.0f,
+                            CCDirector::sharedDirector()->getWinSize().height - 38.0f });
+        menu->setID("voicedash-calibrator-menu");
+        this->addChild(menu, 100);
+    }
+
+    void onVoiceCalibrator(CCObject*) {
+        showVoiceCalibrator();
+    }
+
     void onEnter() {
         if (auto* layer = PlayLayer::get()) {
             voicedash::VoiceRuntime::get().onPause(layer);
