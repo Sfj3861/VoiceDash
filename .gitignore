@@ -1,0 +1,13 @@
+build/
+build-android32/
+build-android64/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+*.geode
+*.so
+*.o
+.idea/
+.vscode/
+.DS_Store
