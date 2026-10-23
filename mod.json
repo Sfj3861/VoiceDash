@@ -7,17 +7,23 @@
   "name": "VoiceDash",
   "version": "v0.1.0",
   "developer": "Sfj3861",
-  "description": "Experimental Android voice input for Geometry Dash: sustain a vocalization to hold jump, then release on silence.",
+  "description": "Experimental Android voice input for Geometry Dash: sustain a vocalization to hold Jump, then release on silence.",
   "tags": [
     "gameplay",
-    "enhancement"
+    "enhancement",
+    "offline"
   ],
   "settings": {
+    "voice-title": {
+      "type": "title",
+      "name": "Voice input",
+      "description": "Voice control is off by default and captures audio only while enabled during an active level."
+    },
     "voice-enabled": {
       "type": "bool",
       "default": false,
       "name": "Enable voice control",
-      "description": "Experimental: enable microphone input during levels. Requires RECORD_AUDIO permission in the host app."
+      "description": "Enable microphone input during levels. The Android host app must declare and grant RECORD_AUDIO."
     },
     "activation-threshold": {
       "type": "float",
@@ -25,31 +31,51 @@
       "min": 0.005,
       "max": 0.2,
       "name": "Voice activation threshold",
-      "description": "Higher values reject more background noise but require a louder vocalization."
+      "description": "Higher values reject more background noise but require a louder vocalization.",
+      "control": {
+        "slider": true,
+        "slider-step": 0.005,
+        "input": true
+      }
     },
     "release-threshold": {
       "type": "float",
-      "default": 0.02,
+      "default": 0.020,
       "min": 0.002,
       "max": 0.15,
       "name": "Voice release threshold",
-      "description": "Lower than activation threshold to avoid rapid toggling."
+      "description": "Threshold for starting the silence countdown. Keep this below the activation threshold.",
+      "control": {
+        "slider": true,
+        "slider-step": 0.002,
+        "input": true
+      }
     },
     "attack-ms": {
       "type": "int",
-      "default": 18,
-      "min": 0,
-      "max": 250,
+      "default": 25,
+      "min": 5,
+      "max": 150,
       "name": "Activation confirmation (ms)",
-      "description": "Filters very short sounds. Lower values respond faster but may trigger on noise."
+      "description": "How long audio must stay above threshold before pressing Jump.",
+      "control": {
+        "slider": true,
+        "slider-step": 5,
+        "input": true
+      }
     },
     "release-ms": {
       "type": "int",
-      "default": 85,
+      "default": 60,
       "min": 10,
-      "max": 500,
+      "max": 250,
       "name": "Release confirmation (ms)",
-      "description": "Silence duration required before releasing the input."
+      "description": "How long audio must stay below the release threshold before releasing Jump.",
+      "control": {
+        "slider": true,
+        "slider-step": 5,
+        "input": true
+      }
     }
   },
   "dependencies": {}
