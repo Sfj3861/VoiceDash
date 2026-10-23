@@ -32,13 +32,18 @@ void VoiceRuntime::applyConfiguration() noexcept {
 }
 
 void VoiceRuntime::onLevelStart(PlayLayer* layer) noexcept {
+    // Tear down any previous stream before changing the layer pointer. This is
+    // defensive against unusual scene transitions which skip the expected
+    // previous-level exit callback.
+    m_capture.stop();
+    m_detector.forceRelease();
+
     m_layer = layer;
     m_enabled = false; // Force a fresh read of the saved setting on first update.
     m_paused = false;
     m_startAttempted = false;
     m_captureWasRunning = false;
     m_voiceApplied = false;
-    m_detector.forceRelease();
 }
 
 void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
@@ -56,7 +61,7 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
     }
 
     if (!m_enabled || m_paused) {
-        if (m_capture.isRunning() || m_voiceApplied) {
+        if (m_capture.isRunning() || m_voiceApplied || m_captureWasRunning) {
             stopCaptureAndRelease(layer);
         }
         return;
@@ -65,8 +70,6 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
     if (!m_capture.isRunning() && !m_startAttempted) {
         m_startAttempted = true;
         if (!m_capture.start(m_detector)) {
-            // Don't retry every frame. Toggle voice off/on or enter a new
-            // level after fixing host-app permission/configuration.
             log::error(
                 "VoiceDash: microphone did not start. Check the host app's "
                 "RECORD_AUDIO declaration and permission; see docs/ANDROID_MICROPHONE.md."
@@ -76,7 +79,7 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
         }
     }
 
-    // AAudio may disconnect asynchronously. Clean up the stream on the game
+    // AAudio can disconnect asynchronously. Clean up the stream on the game
     // thread after its callback reports an error; don't retry every frame.
     if (m_captureWasRunning && !m_capture.isRunning()) {
         m_capture.stop();
