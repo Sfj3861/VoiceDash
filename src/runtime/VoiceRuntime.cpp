@@ -71,8 +71,9 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
         m_startAttempted = true;
         if (!m_capture.start(m_detector)) {
             log::error(
-                "VoiceDash: microphone did not start. Check the host app's "
-                "RECORD_AUDIO declaration and permission; see docs/ANDROID_MICROPHONE.md."
+                "VoiceDash: microphone did not start (error {}). Check the host app's "
+                "RECORD_AUDIO declaration and permission; see docs/ANDROID_MICROPHONE.md.",
+                m_capture.lastError()
             );
         } else {
             m_captureWasRunning = true;
@@ -82,8 +83,10 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
     // AAudio can disconnect asynchronously. Clean up the stream on the game
     // thread after its callback reports an error; don't retry every frame.
     if (m_captureWasRunning && !m_capture.isRunning()) {
+        const auto error = m_capture.lastError();
         m_capture.stop();
         m_captureWasRunning = false;
+        log::error("VoiceDash: microphone stream stopped unexpectedly (error {}).", error);
     }
 
     // Treat capture failure as silence and release any voice-held input.
