@@ -135,19 +135,26 @@ void AudioCapture::worker() noexcept {
     }
 
 cleanup:
-    // Release the platform recorder even when initialization/read fails.
-    if (recorder && recordingStarted && stopRecording && !env->ExceptionCheck()) {
-        env->CallVoidMethod(recorder, stopRecording);
-        if (env->ExceptionCheck()) env->ExceptionClear();
-    }
-    if (recorder && releaseRecorder && !env->ExceptionCheck()) {
-        env->CallVoidMethod(recorder, releaseRecorder);
-        if (env->ExceptionCheck()) env->ExceptionClear();
-    }
+    // Clear a pending Java exception before attempting cleanup, otherwise JNI
+    // refuses subsequent calls and the platform recorder may leak resources.
     if (env->ExceptionCheck()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
         m_error.store(true, std::memory_order_relaxed);
+    }
+    if (recorder && recordingStarted && stopRecording) {
+        env->CallVoidMethod(recorder, stopRecording);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            m_error.store(true, std::memory_order_relaxed);
+        }
+    }
+    if (recorder && releaseRecorder) {
+        env->CallVoidMethod(recorder, releaseRecorder);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            m_error.store(true, std::memory_order_relaxed);
+        }
     }
     if (buffer) env->DeleteLocalRef(buffer);
     if (recorder) env->DeleteLocalRef(recorder);
