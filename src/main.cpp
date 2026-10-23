@@ -34,9 +34,12 @@ class $modify(VoiceDashPlayLayer, PlayLayer) {
         return true;
     }
 
-    void postUpdate(float dt) {
-        PlayLayer::postUpdate(dt);
+    void update(float dt) {
+        // Apply the latest audio state before the game's frame update so a
+        // detected vocalization can affect this frame rather than one frame
+        // after physics has already advanced.
         voicedash::VoiceRuntime::get().onLevelUpdate(this);
+        PlayLayer::update(dt);
     }
 
     void onQuit() {
