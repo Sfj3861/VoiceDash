@@ -1,0 +1,10 @@
+{
+  "geode": "4.0.0",
+  "gd": "2.2081",
+  "version": "v0.1.0",
+  "id": "sfj3861.voicedash",
+  "name": "VoiceDash",
+  "developer": "Sfj3861",
+  "description": "Control Geometry Dash input by sustaining a vocalization. Android microphone support is experimental.",
+  "dependencies": {}
+}
