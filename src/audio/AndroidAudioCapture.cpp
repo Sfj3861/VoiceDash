@@ -45,7 +45,7 @@ bool AndroidAudioCapture::start(VoiceDetector& detector) noexcept {
     AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_I16);
     AAudioStreamBuilder_setChannelCount(builder, 1);
     AAudioStreamBuilder_setSampleRate(builder, AAUDIO_UNSPECIFIED);
-    AAudioStreamBuilder_setInputPreset(builder, AAUDIO_INPUT_PRESET_VOICE_RECOGNITION);
+    // setInputPreset requires Android API 28; omit it to preserve API 26 support.
     AAudioStreamBuilder_setDataCallback(builder, &AndroidAudioCapture::dataCallback, this);
     AAudioStreamBuilder_setErrorCallback(builder, &AndroidAudioCapture::errorCallback, this);
 
