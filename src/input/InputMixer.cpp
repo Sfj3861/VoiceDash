@@ -12,12 +12,12 @@ bool InputMixer::s_physicalJump = false;
 bool InputMixer::s_voiceJump = false;
 bool InputMixer::s_effectiveJump = false;
 
-RoutedButton InputMixer::route(bool down, int button, bool isPlayer2, bool inPlayLayer) noexcept {
+RoutedButton InputMixer::route(bool down, int button, bool isPlayer1, bool inPlayLayer) noexcept {
     const int jumpButton = static_cast<int>(PlayerButton::Jump);
 
-    // Only merge player-one Jump while a PlayLayer is active. Every other
-    // button and editor input keeps the game's original behaviour.
-    if (!inPlayLayer || isPlayer2 || button != jumpButton) {
+    // GJBaseGameLayer::handleButton's third argument is isPlayer1.
+    // Merge only player-one Jump during gameplay; preserve all other input.
+    if (!inPlayLayer || !isPlayer1 || button != jumpButton) {
         return {true, down};
     }
 
@@ -37,12 +37,11 @@ RoutedButton InputMixer::route(bool down, int button, bool isPlayer2, bool inPla
 }
 
 void InputMixer::injectVoice(PlayLayer* layer, bool down) noexcept {
-    if (layer == nullptr) {
-        return;
-    }
+    if (layer == nullptr) return;
 
     s_injectingVoice = true;
-    layer->handleButton(down, static_cast<int>(PlayerButton::Jump), false);
+    // true targets player one (not player two).
+    layer->handleButton(down, static_cast<int>(PlayerButton::Jump), true);
     s_injectingVoice = false;
 }
 
