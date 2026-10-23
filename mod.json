@@ -6,5 +6,13 @@
   "name": "VoiceDash",
   "developer": "Sfj3861",
   "description": "Control Geometry Dash input by sustaining a vocalization. Android microphone support is experimental.",
-  "dependencies": {}
+  "dependencies": {},
+  "settings": [
+    {
+      "name": "voice-enabled",
+      "type": "bool",
+      "default": false,
+      "description": "Enable experimental voice input during levels. Grant microphone permission in Android settings first."
+    }
+  ]
 }
