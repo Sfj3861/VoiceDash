@@ -28,6 +28,7 @@ private:
     bool m_enabled = false;
     bool m_paused = false;
     bool m_startAttempted = false;
+    bool m_captureWasRunning = false;
     bool m_voiceApplied = false;
 };
 
