@@ -9,16 +9,16 @@
 using namespace geode::prelude;
 
 class $modify(VoiceDashBaseGameLayer, GJBaseGameLayer) {
-    void handleButton(bool down, int button, bool isPlayer2) {
+    void handleButton(bool down, int button, bool isPlayer1) {
         // GJBaseGameLayer is also used by the editor. Only merge voice input
         // into player-one Jump while the current object is a PlayLayer.
         const bool inPlayLayer = typeinfo_cast<PlayLayer*>(this) != nullptr;
         const auto routed = voicedash::InputMixer::route(
-            down, button, isPlayer2, inPlayLayer
+            down, button, isPlayer1, inPlayLayer
         );
 
         if (routed.forward) {
-            GJBaseGameLayer::handleButton(routed.down, button, isPlayer2);
+            GJBaseGameLayer::handleButton(routed.down, button, isPlayer1);
         }
     }
 };
