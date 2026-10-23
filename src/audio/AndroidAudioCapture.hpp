@@ -53,6 +53,7 @@ private:
     VoiceDetector* m_detector = nullptr;
     std::atomic<bool> m_running{false};
     std::atomic<std::int32_t> m_lastError{0};
+    std::atomic<std::uint32_t> m_sampleRate{0};
 };
 
 } // namespace voicedash
