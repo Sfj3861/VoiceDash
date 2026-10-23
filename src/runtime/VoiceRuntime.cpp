@@ -20,12 +20,14 @@ VoiceRuntime& VoiceRuntime::get() noexcept {
 void VoiceRuntime::applyConfiguration() noexcept {
     const auto activation = Mod::get()->getSettingValue<double>("activation-threshold");
     const auto release = Mod::get()->getSettingValue<double>("release-threshold");
+    const auto minPeriodicity = Mod::get()->getSettingValue<double>("minimum-periodicity");
     const auto activationMs = Mod::get()->getSettingValue<std::int64_t>("attack-ms");
     const auto releaseMs = Mod::get()->getSettingValue<std::int64_t>("release-ms");
 
     m_detector.configure(
         static_cast<float>(activation),
         static_cast<float>(release),
+        static_cast<float>(minPeriodicity),
         static_cast<std::uint32_t>(std::max<std::int64_t>(activationMs, 5)),
         static_cast<std::uint32_t>(std::max<std::int64_t>(releaseMs, 5))
     );
