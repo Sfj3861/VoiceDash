@@ -92,7 +92,7 @@ bool AndroidAudioCapture::start(VoiceDetector& detector) noexcept {
         m_stream = nullptr;
         m_detector = nullptr;
         m_sampleRate.store(0, std::memory_order_relaxed);
-        log::error("VoiceDash: starting microphone failed: {},
+        log::error("VoiceDash: starting microphone failed: {}",
                    AAudio_convertResultToText(result));
         return false;
     }
