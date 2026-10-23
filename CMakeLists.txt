@@ -6,6 +6,11 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(VoiceDash VERSION 0.1.0 LANGUAGES CXX)
 
+# Work around fmt's consteval-format-string failures with the Android NDK
+# compiler used by the current Geode SDK build. This is inherited by SDK
+# dependency targets created below.
+add_compile_definitions(FMT_USE_CONSTEVAL=0)
+
 file(GLOB_RECURSE VOICEDASH_SOURCES CONFIGURE_DEPENDS
     src/*.cpp
 )
