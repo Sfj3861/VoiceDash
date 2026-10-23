@@ -73,8 +73,12 @@ bool AndroidAudioCapture::start(VoiceDetector& detector) noexcept {
         return false;
     }
 
+    // Publish running before starting: the error callback may fire during
+    // requestStart. Never overwrite its false state after the callback runs.
+    m_running.store(true, std::memory_order_release);
     result = AAudioStream_requestStart(m_stream);
     if (result != AAUDIO_OK) {
+        m_running.store(false, std::memory_order_release);
         m_lastError.store(result, std::memory_order_relaxed);
         AAudioStream_close(m_stream);
         m_stream = nullptr;
@@ -84,8 +88,9 @@ bool AndroidAudioCapture::start(VoiceDetector& detector) noexcept {
         return false;
     }
 
-    m_running.store(true, std::memory_order_release);
-    log::info("VoiceDash: microphone capture started at {} Hz", actualRate);
+    if (m_running.load(std::memory_order_acquire)) {
+        log::info("VoiceDash: microphone capture started at {} Hz", actualRate);
+    }
     return true;
 #else
     (void)detector;
