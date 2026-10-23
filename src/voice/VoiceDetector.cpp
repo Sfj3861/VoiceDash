@@ -194,9 +194,8 @@ bool VoiceDetector::processSamples(const std::int16_t* samples,
         std::min<std::size_t>(kWindowCapacity,
             std::max<std::size_t>(128u, effectiveRate / 50u));
 
-    m_periodicityUpdateFrames += static_cast<std::uint32_t>(
-        std::min<std::size_t>(frameCount, UINT32_MAX)
-    );
+    // Audio callbacks use a signed 32-bit frame count; conversion is safe here.
+    m_periodicityUpdateFrames += static_cast<std::uint32_t>(frameCount);
     if (m_periodicityCount >= requiredWindow &&
         m_periodicityUpdateFrames >= std::max<std::uint32_t>(1u, sampleRate / 200u)) {
         std::array<std::int16_t, kWindowCapacity> ordered{};
