@@ -98,21 +98,21 @@ void AudioCapture::worker() noexcept {
         if (!getState || !startRecording || !read || !stopRecording || !releaseRecorder) goto cleanup;
         if (env->CallIntMethod(recorder, getState) != 1 || env->ExceptionCheck()) goto cleanup;
 
-        buffer = env->NewShortArray(2048);
+        buffer = env->NewShortArray(512);
         if (!buffer) goto cleanup;
         env->CallVoidMethod(recorder, startRecording);
         if (env->ExceptionCheck()) goto cleanup;
         recordingStarted = true;
 
         while (m_running.load(std::memory_order_acquire)) {
-            jint count = env->CallIntMethod(recorder, read, buffer, 0, 2048);
+            jint count = env->CallIntMethod(recorder, read, buffer, 0, 512);
             if (env->ExceptionCheck() || count < 0) {
                 m_error.store(true, std::memory_order_relaxed);
                 break;
             }
             if (count == 0) continue;
 
-            jshort samples[2048];
+            jshort samples[512];
             env->GetShortArrayRegion(buffer, 0, count, samples);
             if (env->ExceptionCheck()) {
                 m_error.store(true, std::memory_order_relaxed);
