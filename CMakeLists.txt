@@ -26,5 +26,5 @@ setup_geode_mod(VoiceDash)
 
 if (ANDROID)
     # AndroidAudioCapture uses native AAudio (available from API 26).
-    target_link_libraries(VoiceDash PRIVATE aaudio log)
+    target_link_libraries(VoiceDash aaudio log)
 endif()
