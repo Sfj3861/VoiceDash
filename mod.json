@@ -1,18 +1,56 @@
 {
-  "geode": "4.0.0",
-  "gd": "2.2081",
-  "version": "v0.1.0",
+  "geode": "v4.0.0",
+  "gd": {
+    "android": "2.2081"
+  },
   "id": "sfj3861.voicedash",
   "name": "VoiceDash",
+  "version": "v0.1.0",
   "developer": "Sfj3861",
-  "description": "Control Geometry Dash input by sustaining a vocalization. Android microphone support is experimental.",
-  "dependencies": {},
-  "settings": [
-    {
-      "name": "voice-enabled",
+  "description": "Experimental Android voice input for Geometry Dash: sustain a vocalization to hold jump, then release on silence.",
+  "tags": [
+    "gameplay",
+    "enhancement"
+  ],
+  "settings": {
+    "voice-enabled": {
       "type": "bool",
       "default": false,
-      "description": "Enable experimental voice input during levels. Grant microphone permission in Android settings first."
+      "name": "Enable voice control",
+      "description": "Experimental: enable microphone input during levels. Requires RECORD_AUDIO permission in the host app."
+    },
+    "activation-threshold": {
+      "type": "float",
+      "default": 0.035,
+      "min": 0.005,
+      "max": 0.2,
+      "name": "Voice activation threshold",
+      "description": "Higher values reject more background noise but require a louder vocalization."
+    },
+    "release-threshold": {
+      "type": "float",
+      "default": 0.02,
+      "min": 0.002,
+      "max": 0.15,
+      "name": "Voice release threshold",
+      "description": "Lower than activation threshold to avoid rapid toggling."
+    },
+    "attack-ms": {
+      "type": "int",
+      "default": 18,
+      "min": 0,
+      "max": 250,
+      "name": "Activation confirmation (ms)",
+      "description": "Filters very short sounds. Lower values respond faster but may trigger on noise."
+    },
+    "release-ms": {
+      "type": "int",
+      "default": 85,
+      "min": 10,
+      "max": 500,
+      "name": "Release confirmation (ms)",
+      "description": "Silence duration required before releasing the input."
     }
-  ]
+  },
+  "dependencies": {}
 }
