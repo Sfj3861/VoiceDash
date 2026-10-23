@@ -1,0 +1,10 @@
+# Changelog
+
+## v0.1.0
+
+- Initial Android AAudio capture path.
+- RMS vocalization detector with adaptive noise estimate and activation/release hysteresis.
+- Source-aware Jump input merger for voice plus physical controls.
+- Voice enable and sensitivity settings.
+- Pause/level lifecycle handling and detector unit tests.
+- Android32/Android64 GitHub Actions build workflow.
