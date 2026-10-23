@@ -50,7 +50,7 @@ Open VoiceDash in Geode's mod settings:
 - **Activation confirmation** filters very short sounds.
 - **Release confirmation** controls how long silence must persist before Jump is released.
 
-The current detector uses RMS amplitude, a slowly adapting background estimate, and activation/release hysteresis. It is intentionally lightweight for the real-time AAudio callback. It is not a full voice activity detector: loud environmental sounds may trigger it, and quieter or breathy vocalizations may not.
+The detector combines RMS amplitude, 5 ms loudness coverage, a slowly adapting background estimate, activation/release hysteresis, and a decimated autocorrelation score for sustained voiced sounds. The rolling window is analysed at short intervals without allocations or locks inside the real-time AAudio callback. This is not a speech recognizer: strong tonal environmental sounds can still trigger it, while breathy or unvoiced sounds may not. **Minimum voice periodicity** controls how tonal the signal must be.
 
 ## Safety and privacy
 
