@@ -46,12 +46,13 @@ void InputMixer::injectVoice(PlayLayer* layer, bool down) noexcept {
 }
 
 void InputMixer::reset(PlayLayer* layer) noexcept {
-    if (layer != nullptr && s_voiceJump) {
+    // Clear physical ownership first, then route one final release through the
+    // same mixer. This also handles a key/touch held while the pause scene opens.
+    s_physicalJump = false;
+    if (layer != nullptr && (s_voiceJump || s_effectiveJump)) {
         injectVoice(layer, false);
     }
 
-    // A scene is ending, so clear cached source state to avoid carrying a
-    // held button into the next level.
     s_injectingVoice = false;
     s_physicalJump = false;
     s_voiceJump = false;
