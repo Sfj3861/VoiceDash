@@ -35,38 +35,33 @@ void feed(VoiceDetector& detector, const std::vector<std::int16_t>& samples) {
 
 int main() {
     VoiceDetector detector;
-    detector.configure(0.018f, 25, 60);
+    detector.configure(0.018f, 0.010f, 25, 60);
 
-    auto quiet = silence(kBlockFrames);
+    const auto quiet = silence(kBlockFrames);
     for (int i = 0; i < 10; ++i) {
         feed(detector, quiet);
     }
     assert(!detector.isActive());
 
-    // A single 10 ms burst must not pass a 25 ms activation confirmation.
-    auto burst = makeTone(kBlockFrames, 0.15f);
-    feed(detector, burst);
+    // One 10 ms burst must not pass the 25 ms activation confirmation.
+    feed(detector, makeTone(kBlockFrames, 0.15f));
     assert(!detector.isActive());
 
-    // Sustained vocalization crosses the activation confirmation threshold.
-    auto tone = makeTone(kBlockFrames * 5, 0.15f);
-    feed(detector, tone);
+    feed(detector, makeTone(kBlockFrames * 5, 0.15f));
     assert(detector.isActive());
 
-    // A short gap should not release the input because release hysteresis is 60 ms.
+    // A short gap doesn't release: release confirmation is 60 ms.
     feed(detector, silence(kBlockFrames * 2));
     assert(detector.isActive());
 
-    // Returning voice resets the pending release.
+    // Returning voice cancels the pending release.
     feed(detector, makeTone(kBlockFrames * 3, 0.15f));
     assert(detector.isActive());
 
-    // Sustained silence releases the input.
     feed(detector, silence(kBlockFrames * 8));
     assert(!detector.isActive());
 
-    // Reset always releases and clears the detector state.
-    feed(detector, tone);
+    feed(detector, makeTone(kBlockFrames * 5, 0.15f));
     assert(detector.isActive());
     detector.forceRelease();
     assert(!detector.isActive());
