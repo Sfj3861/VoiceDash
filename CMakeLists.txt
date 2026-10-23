@@ -6,11 +6,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(VoiceDash VERSION 0.1.0 LANGUAGES CXX)
 
-# Work around fmt's consteval-format-string failures with the Android NDK
-# compiler used by the current Geode SDK build. This is inherited by SDK
-# dependency targets created below.
-add_compile_definitions(FMT_USE_CONSTEVAL=0)
-
 file(GLOB_RECURSE VOICEDASH_SOURCES CONFIGURE_DEPENDS
     src/*.cpp
 )
@@ -27,6 +22,15 @@ endif()
 
 message(STATUS "Using Geode SDK at: $ENV{GEODE_SDK}")
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+# The fmt bundled by this Geode SDK revision fails constant evaluation with
+# the Android NDK's C++20 mode. Compile fmt itself as C++17 so fmt disables
+# its consteval path; VoiceDash and Geode remain on C++20.
+if (TARGET fmt)
+    set_property(TARGET fmt PROPERTY CXX_STANDARD 17)
+    set_property(TARGET fmt PROPERTY CXX_STANDARD_REQUIRED ON)
+endif()
+
 setup_geode_mod(VoiceDash)
 
 if (ANDROID)
