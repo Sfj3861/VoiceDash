@@ -13,8 +13,12 @@ AudioCapture::AudioCapture(VoiceDetector& detector) : m_detector(detector) {}
 AudioCapture::~AudioCapture() { stop(); }
 
 bool AudioCapture::start() {
-    if (m_running.exchange(true, std::memory_order_acq_rel)) return true;
+    if (m_running.load(std::memory_order_acquire)) return true;
+    // A worker can finish itself after an audio error; reap that completed
+    // thread before assigning a new std::thread to the member.
+    if (m_thread.joinable()) m_thread.join();
     m_error.store(false, std::memory_order_relaxed);
+    m_running.store(true, std::memory_order_release);
 #if defined(GEODE_IS_ANDROID)
     m_thread = std::thread(&AudioCapture::worker, this);
     return true;
@@ -61,6 +65,9 @@ void AudioCapture::worker() noexcept {
     jobject recorder = nullptr;
     jshortArray buffer = nullptr;
     jclass audioRecordClass = env->FindClass("android/media/AudioRecord");
+    jmethodID stopRecording = nullptr;
+    jmethodID releaseRecorder = nullptr;
+    bool recordingStarted = false;
     if (!audioRecordClass || env->ExceptionCheck()) goto cleanup;
 
     {
@@ -86,15 +93,16 @@ void AudioCapture::worker() noexcept {
         jmethodID getState = env->GetMethodID(audioRecordClass, "getState", "()I");
         jmethodID startRecording = env->GetMethodID(audioRecordClass, "startRecording", "()V");
         jmethodID read = env->GetMethodID(audioRecordClass, "read", "([SII)I");
-        jmethodID stopRecording = env->GetMethodID(audioRecordClass, "stop", "()V");
-        jmethodID release = env->GetMethodID(audioRecordClass, "release", "()V");
-        if (!getState || !startRecording || !read || !stopRecording || !release) goto cleanup;
+        stopRecording = env->GetMethodID(audioRecordClass, "stop", "()V");
+        releaseRecorder = env->GetMethodID(audioRecordClass, "release", "()V");
+        if (!getState || !startRecording || !read || !stopRecording || !releaseRecorder) goto cleanup;
         if (env->CallIntMethod(recorder, getState) != 1 || env->ExceptionCheck()) goto cleanup;
 
         buffer = env->NewShortArray(2048);
         if (!buffer) goto cleanup;
         env->CallVoidMethod(recorder, startRecording);
         if (env->ExceptionCheck()) goto cleanup;
+        recordingStarted = true;
 
         while (m_running.load(std::memory_order_acquire)) {
             jint count = env->CallIntMethod(recorder, read, buffer, 0, 2048);
@@ -117,7 +125,8 @@ void AudioCapture::worker() noexcept {
         if (env->ExceptionCheck()) env->ExceptionClear();
         env->CallVoidMethod(recorder, stopRecording);
         if (env->ExceptionCheck()) env->ExceptionClear();
-        env->CallVoidMethod(recorder, release);
+        recordingStarted = false;
+        env->CallVoidMethod(recorder, releaseRecorder);
         if (env->ExceptionCheck()) env->ExceptionClear();
         env->DeleteLocalRef(buffer);
         buffer = nullptr;
@@ -126,6 +135,15 @@ void AudioCapture::worker() noexcept {
     }
 
 cleanup:
+    // Release the platform recorder even when initialization/read fails.
+    if (recorder && recordingStarted && stopRecording && !env->ExceptionCheck()) {
+        env->CallVoidMethod(recorder, stopRecording);
+        if (env->ExceptionCheck()) env->ExceptionClear();
+    }
+    if (recorder && releaseRecorder && !env->ExceptionCheck()) {
+        env->CallVoidMethod(recorder, releaseRecorder);
+        if (env->ExceptionCheck()) env->ExceptionClear();
+    }
     if (env->ExceptionCheck()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
