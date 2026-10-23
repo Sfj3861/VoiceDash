@@ -5,6 +5,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/PlayLayer.hpp>
 
+#include <algorithm>
+#include <cstdint>
+
 using namespace geode::prelude;
 
 namespace voicedash {
@@ -15,12 +18,14 @@ VoiceRuntime& VoiceRuntime::get() noexcept {
 }
 
 void VoiceRuntime::applyConfiguration() noexcept {
-    const auto threshold = Mod::get()->getSettingValue<double>("activation-threshold");
-    const auto activationMs = Mod::get()->getSettingValue<std::int64_t>("activation-ms");
+    const auto activation = Mod::get()->getSettingValue<double>("activation-threshold");
+    const auto release = Mod::get()->getSettingValue<double>("release-threshold");
+    const auto activationMs = Mod::get()->getSettingValue<std::int64_t>("attack-ms");
     const auto releaseMs = Mod::get()->getSettingValue<std::int64_t>("release-ms");
 
     m_detector.configure(
-        static_cast<float>(threshold),
+        static_cast<float>(activation),
+        static_cast<float>(release),
         static_cast<std::uint32_t>(std::max<std::int64_t>(activationMs, 5)),
         static_cast<std::uint32_t>(std::max<std::int64_t>(releaseMs, 5))
     );
@@ -28,7 +33,7 @@ void VoiceRuntime::applyConfiguration() noexcept {
 
 void VoiceRuntime::onLevelStart(PlayLayer* layer) noexcept {
     m_layer = layer;
-    m_enabled = false; // Force a fresh read of the user setting on the next update.
+    m_enabled = false; // Force a fresh read of the saved setting on first update.
     m_paused = false;
     m_startAttempted = false;
     m_voiceApplied = false;
@@ -39,7 +44,7 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
     m_layer = layer;
     applyConfiguration();
 
-    const bool shouldEnable = Mod::get()->getSettingValue<bool>("enable-voice");
+    const bool shouldEnable = Mod::get()->getSettingValue<bool>("voice-enabled");
     if (shouldEnable != m_enabled) {
         m_enabled = shouldEnable;
         m_startAttempted = false;
@@ -59,17 +64,17 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
     if (!m_capture.isRunning() && !m_startAttempted) {
         m_startAttempted = true;
         if (!m_capture.start(m_detector)) {
-            // Do not retry every frame. Toggle voice control off/on, or enter a
-            // new level, after fixing the host app's permission/configuration.
+            // Don't retry every frame. Toggle voice off/on or enter a new
+            // level after fixing host-app permission/configuration.
             log::error(
-                "VoiceDash: microphone did not start. Check Android RECORD_AUDIO "
-                "permission and read docs/ANDROID_MICROPHONE.md."
+                "VoiceDash: microphone did not start. Check the host app's "
+                "RECORD_AUDIO declaration and permission; see docs/ANDROID_MICROPHONE.md."
             );
         }
     }
 
-    // AAudio can report disconnection asynchronously. Do not leave Jump held
-    // if capture stops unexpectedly.
+    // AAudio may disconnect asynchronously. Treat capture failure as silence
+    // and release any voice-held input on the next game-thread update.
     const bool shouldPress = m_enabled && !m_paused &&
         m_capture.isRunning() && m_detector.isActive();
 
@@ -113,8 +118,7 @@ void VoiceRuntime::onResume(PlayLayer* layer) noexcept {
     }
     m_paused = false;
     m_startAttempted = false;
-    // Capture starts on the next PlayLayer update, never from the pause
-    // overlay's onExit callback.
+    // Capture starts during the next gameplay update, not from a pause UI callback.
 }
 
 } // namespace voicedash
