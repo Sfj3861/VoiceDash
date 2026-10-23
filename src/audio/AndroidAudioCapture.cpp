@@ -102,10 +102,18 @@ bool AndroidAudioCapture::start(VoiceDetector& detector) noexcept {
         return false;
     }
 
-    if (m_running.load(std::memory_order_acquire)) {
-        log::info("VoiceDash: microphone capture started at {} Hz", actualRate);
+    if (!m_running.load(std::memory_order_acquire)) {
+        // AAudio may invoke the error callback before requestStart returns.
+        // Reap the partially started stream here so the runtime does not leak
+        // it when start() reports failure.
+        log::error("VoiceDash: microphone stream failed immediately after start ({}).",
+                   m_lastError.load(std::memory_order_relaxed));
+        stop();
+        return false;
     }
-    return m_running.load(std::memory_order_acquire);
+
+    log::info("VoiceDash: microphone capture started at {} Hz", actualRate);
+    return true;
 #else
     (void)detector;
     m_lastError.store(-1, std::memory_order_relaxed);
