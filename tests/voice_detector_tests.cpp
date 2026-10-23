@@ -35,7 +35,7 @@ void feed(VoiceDetector& detector, const std::vector<std::int16_t>& samples) {
 
 int main() {
     VoiceDetector detector;
-    detector.configure(0.018f, 0.010f, 25, 60);
+    detector.configure(0.018f, 0.010f, 0.22f, 25, 60);
 
     const auto quiet = silence(kBlockFrames);
     for (int i = 0; i < 10; ++i) {
@@ -51,6 +51,7 @@ int main() {
 
     feed(detector, makeTone(kBlockFrames * 5, 0.15f));
     assert(detector.isActive());
+    assert(detector.periodicity() >= 0.22f);
 
     // A short gap doesn't release: release confirmation is 60 ms.
     feed(detector, silence(kBlockFrames * 2));
