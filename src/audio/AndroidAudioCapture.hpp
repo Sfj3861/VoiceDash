@@ -12,8 +12,10 @@
 namespace voicedash {
 
 /**
- * AAudio PCM16 mono capture. Start/stop must be called on the game's thread.
- * The data callback performs bounded, allocation-free analysis only.
+ * AAudio PCM16 mono capture.
+ *
+ * start/stop run on the game thread. The AAudio callback performs bounded,
+ * allocation-free detector work only. The callback never reads scene objects.
  */
 class AndroidAudioCapture final {
 public:
@@ -47,10 +49,12 @@ private:
         void* userData,
         aaudio_result_t error) noexcept;
 
-    AAudioStream* m_stream = nullptr;
+    AAudioStream* m_stream = nullptr; // Main-thread-only.
 #endif
 
-    VoiceDetector* m_detector = nullptr;
+    // Published before stream start and cleared only after stream close. Atomic
+    // publication makes the callback's lifetime relationship explicit.
+    std::atomic<VoiceDetector*> m_detector{nullptr};
     std::atomic<bool> m_running{false};
     std::atomic<std::int32_t> m_lastError{0};
     std::atomic<std::uint32_t> m_sampleRate{0};
