@@ -35,7 +35,9 @@ jobs:
       - name: Build Geode mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          sdk: given
+          # Use the current stable SDK and matching bindings rather than pinning
+          # an older SDK against newer generated bindings.
+          sdk: latest
           target: ${{ matrix.config.target }}
           android-min-sdk: 26
           combine: true
