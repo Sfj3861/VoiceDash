@@ -26,7 +26,7 @@ AAudio is available from Android 8.0 (API 26), so the Android builds target API 
 
 ## Detector limitations
 
-The detector combines RMS amplitude, a slowly adapting background estimate, and activation/release hysteresis. This is deliberately lightweight for the audio callback. It is not a full voice activity detector: loud environmental sounds may trigger it, and quieter or breathy vocalizations may not.
+The detector combines RMS amplitude, recent loudness coverage, an adaptive background estimate, activation/release hysteresis, and a decimated autocorrelation score. Analysis is bounded and allocation-free in the audio callback. It favours sustained voiced sounds such as vowels and humming, but is not a perfect voice/noise classifier; tonal sounds may still trigger it, while breathy or unvoiced vocalizations may be missed.
 
 ## Validation checklist
 
