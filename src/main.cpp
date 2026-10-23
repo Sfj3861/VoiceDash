@@ -18,6 +18,7 @@ namespace {
     bool g_physicalJumpHeld = false;
     bool g_voiceJumpHeld = false;
     bool g_dispatchedJumpHeld = false;
+    bool g_capturePaused = false;
 
     bool voiceEnabled() {
         return Mod::get()->getSettingValue<bool>("voice-enabled");
@@ -76,6 +77,7 @@ class $modify(VoiceDashPlayLayer, PlayLayer) {
 
         g_activeLayer = this;
         resetInputState(this);
+        g_capturePaused = false;
         g_detector.reset();
         configureDetector();
 
@@ -94,7 +96,15 @@ class $modify(VoiceDashPlayLayer, PlayLayer) {
                 dispatchCombinedJump(this);
             }
             if (g_capture.isRunning()) g_capture.stop();
+            g_capturePaused = false;
             return;
+        }
+
+        // pauseGame() stops the microphone. The first gameplay update after
+        // resuming reopens it; a failed stream is not retried every frame.
+        if (g_capturePaused) {
+            g_capturePaused = false;
+            if (!g_capture.start()) log::error("VoiceDash could not restart microphone capture.");
         }
 
         if (!g_capture.isRunning()) {
@@ -112,9 +122,20 @@ class $modify(VoiceDashPlayLayer, PlayLayer) {
         }
     }
 
+    void pauseGame(bool becauseOfSuspend) {
+        if (g_voiceJumpHeld) {
+            g_voiceJumpHeld = false;
+            dispatchCombinedJump(this);
+        }
+        g_capture.stop();
+        g_capturePaused = true;
+        PlayLayer::pauseGame(becauseOfSuspend);
+    }
+
     void onQuit() {
         resetInputState(this);
         g_capture.stop();
+        g_capturePaused = false;
         g_activeLayer = nullptr;
         PlayLayer::onQuit();
     }
