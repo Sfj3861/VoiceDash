@@ -6,27 +6,27 @@ Android microphone access requires both:
 - android.permission.RECORD_AUDIO declared by the host APK.
 - Runtime permission granted by the user.
 
-A Geode .geode mod is loaded into an already-installed host app and cannot add a permission to that APK's manifest by itself. The current VoiceDash code detects capture failures and stops safely, but it does not yet implement a runtime permission prompt. If the host APK does not declare RECORD_AUDIO, enabling the mod setting is not enough.
+A Geode .geode mod is loaded into an already-installed host app and cannot add a permission to that APK's manifest by itself. VoiceDash checks for capture failures and leaves voice input inactive when AAudio cannot open, but it does not implement a runtime permission prompt. If the host APK does not declare RECORD_AUDIO, enabling the mod setting is not enough.
 
 ## Development checks
 
 1. Verify the exact host APK used to run Geometry Dash declares android.permission.RECORD_AUDIO.
 2. Verify Android has granted that permission to the host app.
 3. Enable VoiceDash in Geode settings before entering a level.
-4. If capture does not start, inspect the Geode log for AudioRecord/JNI errors.
+4. If capture does not start, inspect the Geode log for the AAudio error code.
 5. Test on a physical Android device and handle permission denial or revocation gracefully.
 
 The permission prompt must be implemented by the host app or a trusted launcher build designed to request it. VoiceDash does not bypass Android's permission model. Do not install untrusted APKs to test the mod.
 
 ## Capture backend
 
-The current code uses Android Java AudioRecord through JNI: MIC source, PCM 16-bit mono, 44.1 kHz, with 512-sample read requests on a dedicated worker thread. Samples are processed in memory and are not saved or uploaded. A capture failure leaves voice input inactive.
+The current backend uses native AAudio, PCM 16-bit mono, with the device-configured sample rate and low-latency performance mode. It processes samples in the AAudio data callback without allocation, logging, UI operations, or locks. Audio is processed in memory and is not saved or uploaded.
 
-The native worker must remain independent from the game thread. It must not call Geometry Dash input methods directly; it only publishes detector state for the gameplay thread to consume.
+AAudio is available from Android 8.0 (API 26), so the Android builds target API 26 or later.
 
 ## Detector limitations
 
-The detector combines RMS amplitude, an adaptive background estimate, autocorrelation-based periodicity, and different activation/release thresholds. This favours sustained voiced sounds such as vowels or humming. It is not a perfect voice/noise classifier: tonal environmental sounds can trigger it, and breathy or unvoiced vocalizations may not activate it.
+The detector combines RMS amplitude, a slowly adapting background estimate, and activation/release hysteresis. This is deliberately lightweight for the audio callback. It is not a full voice activity detector: loud environmental sounds may trigger it, and quieter or breathy vocalizations may not.
 
 ## Validation checklist
 
