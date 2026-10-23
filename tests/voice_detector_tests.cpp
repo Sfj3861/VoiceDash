@@ -46,6 +46,8 @@ int main() {
     // One 10 ms burst must not pass the 25 ms activation confirmation.
     feed(detector, makeTone(kBlockFrames, 0.15f));
     assert(!detector.isActive());
+    feed(detector, silence(kBlockFrames * 2)); // Separate burst from the next attempt.
+    assert(!detector.isActive());
 
     feed(detector, makeTone(kBlockFrames * 5, 0.15f));
     assert(detector.isActive());
