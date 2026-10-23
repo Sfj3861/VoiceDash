@@ -36,6 +36,7 @@ void VoiceRuntime::onLevelStart(PlayLayer* layer) noexcept {
     m_enabled = false; // Force a fresh read of the saved setting on first update.
     m_paused = false;
     m_startAttempted = false;
+    m_captureWasRunning = false;
     m_voiceApplied = false;
     m_detector.forceRelease();
 }
@@ -70,11 +71,19 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
                 "VoiceDash: microphone did not start. Check the host app's "
                 "RECORD_AUDIO declaration and permission; see docs/ANDROID_MICROPHONE.md."
             );
+        } else {
+            m_captureWasRunning = true;
         }
     }
 
-    // AAudio may disconnect asynchronously. Treat capture failure as silence
-    // and release any voice-held input on the next game-thread update.
+    // AAudio may disconnect asynchronously. Clean up the stream on the game
+    // thread after its callback reports an error; don't retry every frame.
+    if (m_captureWasRunning && !m_capture.isRunning()) {
+        m_capture.stop();
+        m_captureWasRunning = false;
+    }
+
+    // Treat capture failure as silence and release any voice-held input.
     const bool shouldPress = m_enabled && !m_paused &&
         m_capture.isRunning() && m_detector.isActive();
 
@@ -86,6 +95,7 @@ void VoiceRuntime::onLevelUpdate(PlayLayer* layer) noexcept {
 
 void VoiceRuntime::stopCaptureAndRelease(PlayLayer* layer) noexcept {
     m_capture.stop();
+    m_captureWasRunning = false;
     m_detector.forceRelease();
 
     if (m_voiceApplied && layer != nullptr) {
