@@ -24,8 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: Android32
-            target: Android32
           - name: Android64
             target: Android64
     name: ${{ matrix.config.name }}
