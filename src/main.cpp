@@ -49,6 +49,7 @@ class $modify(VoiceDashPauseLayer, PauseLayer) {
     void onEnter() {
         if (auto* layer = PlayLayer::get()) {
             voicedash::VoiceRuntime::get().onPause(layer);
+            voicedash::InputMixer::reset(layer);
         }
         PauseLayer::onEnter();
     }
