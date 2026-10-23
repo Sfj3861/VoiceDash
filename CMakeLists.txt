@@ -26,6 +26,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 setup_geode_mod(VoiceDash)
 
 if (ANDROID)
-    # Audio is captured through android.media.AudioRecord via JNI.
-    target_link_libraries(VoiceDash PRIVATE log)
+    # AAudio is the native low-latency capture API (Android 8.0 / API 26+).
+    target_link_libraries(VoiceDash PRIVATE aaudio log)
 endif()
