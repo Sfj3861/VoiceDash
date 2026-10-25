@@ -106,10 +106,31 @@ class $modify(VoiceDashPauseLayer, PauseLayer) {
                             CCDirector::sharedDirector()->getWinSize().height - 38.0f });
         menu->setID("voicedash-calibrator-menu");
         this->addChild(menu, 100);
+
+        // Compact square close button on the right side of the pause menu.
+        // Reuse Geometry Dash's native close icon and resume the level when tapped.
+        auto* closeSprite = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
+        if (closeSprite) {
+            closeSprite->setScale(0.85f);
+            auto* closeItem = CCMenuItemSpriteExtra::create(
+                closeSprite, this, menu_selector(VoiceDashPauseLayer::onVoiceDashClose)
+            );
+            auto* closeMenu = CCMenu::create();
+            closeMenu->addChild(closeItem);
+            const auto winSize = CCDirector::sharedDirector()->getWinSize();
+            closeMenu->setPosition({ winSize.width - 24.0f, winSize.height * 0.5f });
+            closeMenu->setID("voicedash-close-menu");
+            this->addChild(closeMenu, 101);
+        }
     }
 
     void onVoiceCalibrator(CCObject*) {
         showVoiceCalibrator();
+    }
+
+    void onVoiceDashClose(CCObject*) {
+        // Same effect as the game's Resume button: dismiss the pause layer.
+        this->onResume(nullptr);
     }
 
     void onEnter() {
